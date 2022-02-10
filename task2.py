@@ -1,3 +1,4 @@
+from ctypes import sizeof
 from random import random
 import numpy
 import pandas
@@ -5,49 +6,27 @@ import math
 import random
 import matplotlib.pyplot as plt
 
-column_names = ["height", "tail", "leg", "nose"]
-data = pandas.read_csv("Task2 - dataset - dog_breeds.csv", names=column_names, header=0)
-print(data)
-
 def compute_euclidean_distance(vec_1, vec_2):
-    
-    # calculate euclidean distance
-    xsumsqaured = (vec_2[0] - vec_1[0]) ** 2
-    ysumsquared = (vec_2[1] - vec_1[1]) ** 2
-    distance = math.sqrt(xsumsqaured + ysumsquared)
 
-    return distance
-
-def compute_euclidean_distance_4d(vec_1, vec_2):
-    
-    # calculate euclidean distance
-    xsumsqaured = (vec_1[0] - vec_2[0]) ** 2
-    ysumsquared = (vec_1[1] - vec_2[1]) ** 2
-    zsumsquared = (vec_1[2] - vec_2[2]) ** 2
-    wsumsquared = (vec_1[3] - vec_2[3]) ** 2
-    distance = math.sqrt(xsumsqaured + ysumsquared + zsumsquared + wsumsquared)
+    distance = float('inf')
+    if (len(vec_1) == len(vec_2)):
+        sum = 0
+        for feature_index in range(0, len(vec_1) - 1):
+            squared = (vec_1[feature_index] - vec_2[feature_index]) ** 2
+            sum = sum + squared
+        
+        distance = math.sqrt(squared)
 
     return distance
 
 def initialise_centroids(dataset, k):
     centroids = []
-    # randomly initialise centroids
+    # randomly initialise centroids using range mechanism
     for i in range(0, k):
-        max_height = max(dataset["height"])
-        min_height = min(dataset["height"])
-        height = random.uniform(min_height, max_height)
-
-        max_tail = max(dataset["tail"])
-        min_tail = min(dataset["tail"])
-        tail = random.uniform(min_tail, max_tail)
-
-        max_leg = max(dataset["leg"])
-        min_leg = min(dataset["leg"])
-        leg = random.uniform(min_leg, max_leg)
-        
-        max_nose = max(dataset["nose"])
-        min_nose = min(dataset["nose"])
-        nose = random.uniform(min_nose, max_nose)
+        height = random.uniform(min(dataset["height"]), max(dataset["height"]))
+        tail = random.uniform(min(dataset["tail"]), max(dataset["tail"]))
+        leg = random.uniform(min(dataset["leg"]), max(dataset["leg"]))
+        nose = random.uniform(min(dataset["nose"]), max(dataset["nose"]))
         
         centroids.append([height, tail, leg, nose])
 
@@ -55,95 +34,112 @@ def initialise_centroids(dataset, k):
 
 def kmeans(dataset, k):
 
-    changed = True
+    dataset = dataset.values
+
+    changed = True  # tracks stability
     old_k = []
 
-    while(changed):
+    cluster_assignment_history = []
+    k_history = [k]
 
-        ####### Assign each data point to a cluster
-        results = [] # This will hold cluster assignments
-        results.clear()
+    while(changed): # Assign each data point to a cluster and calculate new centroid position
+        cluster_assignment = [] # This will hold cluster assignments for each record
         # For every record in dataset
-        for index, row in dataset.iterrows():
+        for index in range(len(dataset)):
             distances = [] # create intermediary place to store distances
-            for cluster in k:
-                # get distance for each cluster
-                distances.append(compute_euclidean_distance_4d(row, cluster))
+            for centroid in k:
+                # calculate distance from each centroid
+                distances.append(compute_euclidean_distance(dataset[index], centroid))
 
-            # get cluster id of smallest in array
-            closest_cluster_index = numpy.argmin(distances)
-            # save cluster id
-            results.append(closest_cluster_index)
-            distances.clear()
+            # get id of shortest distance in array (which is equal to the respective centroid id)
+            closest_centroid_index = numpy.argmin(distances)
+            cluster_assignment.append(closest_centroid_index) # save centroid id 
 
-        print(results)
+        # re-center centroids
+        numpy_results = numpy.array(cluster_assignment)
+        # Use cluster assignment to group values and produce averages. Assign averages to centroids
+        k = pandas.DataFrame(data.values).groupby(numpy_results).mean().values
+        k_history.append(k)
 
-        if k == old_k:
-            changed = False
-            print("not changed")
-        else:
-            changed = True
-            print("changed")
-            old_k.clear()
-            ####### Calculate mean of each cluster of datapoints and return as new centroid
-            cluster_values = []
-            for cluster_index in range(0, len(k)):
-                # iterate through results
-                height = []
-                tail = []
-                leg = []
-                nose = []
-                for result_index in range(0, len(results)):
-                    # if result belongs to this cluster
-                    if results[result_index] == cluster_index:
-                        # use id of this result to get result from dataset
-                        row = dataset.iloc[result_index]
-                        # collect data to aggregate later
-                        height.append(row["height"])
-                        tail.append(row["tail"])
-                        leg.append(row["leg"])
-                        nose.append(row["nose"])
-                # divide vars to find new averages
-                if len(height) != 0:
-                    height_avg = numpy.mean(height)
-                    tail_avg = numpy.mean(tail)
-                    leg_avg = numpy.mean(leg)
-                    nose_avg = numpy.mean(nose)
-                    # put these new centroid values into new k values
-                    k[cluster_index] = [height_avg, tail_avg, leg_avg, nose_avg]
+        if numpy.array_equiv(k, old_k): # If stability reached
+            changed = False  # stop looping next loop
 
-                height.clear()
-                tail.clear()
-                leg.clear()
-                nose.clear()
+        cluster_assignment_history.append(cluster_assignment) # save cluster info for eval
+        old_k = k # save current centroid values to see if they change
 
-        old_k = k
+    # Evaluate K-means
+    eval_kmeans(dataset, cluster_assignment_history, k_history)
 
-    return k, results
-    
+    return k, cluster_assignment
 
-k = initialise_centroids(data[1:], 3)
-j, results = kmeans(data[1:], k)
+def eval_kmeans(dataset, cluster_assignment_history, k_history):
+    # Calculate the sum of squared distances from each data point to centroid
+    iteration_values = []
+    error_sum_values = []
+    for iteration in range(len(cluster_assignment_history)):
+        error_sum = 0
+        for index in range(len(cluster_assignment_history[iteration])):
+            centroid_index = cluster_assignment_history[iteration][index]
+            row = dataset[index]
+            error = compute_euclidean_distance(row, k_history[iteration][centroid_index])
+            error_sum = error_sum + error
+        iteration_values.append(iteration + 1)
+        error_sum_values.append(error_sum)
 
+    # Plot data
+    k = len(k_history[0])
+    fig = plt.figure()
+    fig3 = fig.add_subplot()
+    fig3.set_xlabel("Iteration no.")
+    fig3.set_ylabel("Sum of errors")
+    fig3.set_title(f"Error intensity per iteration (K={k})")
+    plt.plot(iteration_values, error_sum_values)
 
-colours = ["g", "r", "b"]
-for index in range(0, len(results)):
-    this_colour = colours[results[index]]
-    row = data.iloc[index]
-    plt.scatter(row["height"], row["tail"], c=this_colour)
+def show_plots(data, cluster_assignment, k):
 
-for cluster in j:
-    plt.scatter(cluster[0], cluster[1], c="m")
+    k_num = len(k)
+    fig = plt.figure()
+    fig1, fig2 = fig.subplots(2)
 
-plt.show()
+    ## Plot height vs tail length
+    colours = ["c", "m", "y"]
+    for index in range(0, len(cluster_assignment)):
+        this_colour = colours[cluster_assignment[index]]
+        row = data.iloc[index]
+        fig1.scatter(row["height"], row["tail"], c=this_colour)
 
+    for cluster in k:
+        fig1.scatter(cluster[0], cluster[1], c="k", marker="X")
 
-for index in range(0, len(results)):
-    this_colour = colours[results[index]]
-    row = data.iloc[index]
-    plt.scatter(row["height"], row["leg"], c=this_colour)
+    fig1.set_xlabel("Height")
+    fig1.set_ylabel("Tail Length")
+    fig1.set_title(f"Height vs Tail Length in Dogs (K={k_num})")
 
-for cluster in j:
-    plt.scatter(cluster[0], cluster[2], c="m")
+    ## Plot Height vs leg length
+    for index in range(0, len(cluster_assignment)):
+        this_colour = colours[cluster_assignment[index]]
+        row = data.iloc[index]
+        fig2.scatter(row["height"], row["leg"], c=this_colour)
 
-plt.show()
+    for cluster in k:
+        fig2.scatter(cluster[0], cluster[2], c="k", marker="X")
+
+    fig2.set_xlabel("Height")
+    fig2.set_ylabel("Leg Length")
+    fig2.set_title(f"Height vs Leg Length in Dogs (K={k_num})")
+
+    ## Show results
+    plt.show()
+
+column_names = ["height", "tail", "leg", "nose"]
+data = pandas.read_csv("Task2 - dataset - dog_breeds.csv", names=column_names, header=0)
+
+k_num = 2
+k = initialise_centroids(data, k_num)
+k, cluster_assignment = kmeans(data, k)
+show_plots(data, cluster_assignment, k)
+
+k_num = 3
+k = initialise_centroids(data, k_num)
+k, cluster_assignment = kmeans(data, k)
+show_plots(data, cluster_assignment, k)

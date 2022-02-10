@@ -3,15 +3,19 @@ import numpy
 import matplotlib.pyplot as plt
 
 def pol_regression(features_train, y_train, degree):
-    X = getPolynomialDataMatrix(features_train, degree)
+    X = getPolynomialDataMatrix(features_train, degree) # get prepared array
+
+    # perform least squares algorithm to calculate weights
     XX = X.transpose().dot(X)
     w = numpy.linalg.inv(XX).dot(X.transpose().dot(y_train))
 
     return w
 
 def getPolynomialDataMatrix(x, degree):
-    X = numpy.ones(x.shape)
-    for i in range(1, degree + 1):
+    # prepare data
+    X = numpy.ones(x.shape) # create array with same size as x
+    for i in range(1, degree + 1): # for every degree, starting with 1
+        # add new dimension to array, containing given data raised to the degree
         X = numpy.column_stack((X, x ** i ))
     return X
 
@@ -54,8 +58,8 @@ plt.plot(x_space, y_predicted1, 'y')
 plt.plot(x_space, y_predicted2, 'r')
 plt.plot(x_space, y_predicted3, 'g')
 plt.plot(x_space, y_predicted6, 'b')
-#plt.plot(x_space, y_predicted10, 'm')
-plt.legend(('training points'))
+plt.plot(x_space, y_predicted10, 'm')
+plt.legend(['training points', "1 degrees", "2 degrees", "3 degrees", "6 degrees", "10 degrees"])
 plt.show()
 
 
@@ -96,8 +100,8 @@ MSSEtest = []
 
 def eval_pol_regression(parameters, x, y, degree):
     
-    x_new1 = getPolynomialDataMatrix(x, degree)
-    msse = numpy.mean((x_new1.dot(parameters) - y) ** 2)
+    prepared_x = getPolynomialDataMatrix(x, degree)
+    msse = numpy.mean(((prepared_x).dot(parameters) - y) ** 2)
 
     return msse
 
