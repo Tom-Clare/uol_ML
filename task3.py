@@ -19,7 +19,8 @@ def clean_normalise(data, column):
     data = data[((data[column] - data[column].mean()) / data[column].std()).abs() < std]
 
     # use the maximum value to normalise the data[column] data to values between 0 and 1
-    data[column] = (data[column] - data[column].mean()) / data[column].std() 
+    data[column] = (data[column] - data[column].min(axis=0)) / (data[column].max(axis=0) - data[column].min(axis=0))
+
     return data
 
 data = clean_normalise(data, "alpha")
@@ -30,15 +31,19 @@ data = clean_normalise(data, "lambda2")
 
 alpha_boxplot = data.boxplot(column="alpha", by="status")
 beta_boxplot = data.boxplot(column="beta", by="status")
-plt.show()
+#plt.show()
 
 data_summary = data.agg(["mean", "std", "min", "max"])
 
 ## Section 2
 
 from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score
 
+# prepare the labels into numerical form for the classifiers
 data.loc[(data["status"] == "Control"), "status"] = 0
 data.loc[(data["status"] == "Patient"), "status"] = 1
 data["status"] = data["status"].astype(int)
@@ -46,31 +51,106 @@ data["status"] = data["status"].astype(int)
 #create a dataframe with all rows for our input data that contain a NaN value
 mask = numpy.all(numpy.isnan(data), axis=1)
 # and remove all rows from our main dataset that exist in that NaN dataframe
-data = data[~mask] # leaving only values that contain no NaN values
+data_nonnan = data[~mask] # leaving only values that contain no NaN values
 
-features = data.drop("status", 1) # remove label column
+features = data_nonnan.drop(["image", "bifurcation", "arteryvein", "status"], 1) # remove label column
+
 x_vector = features.values # prepare input vector
-y_vector = data["status"].values # prepare output vector
+y_vector = data_nonnan["status"].values # prepare output vector
 
-def train_epochs(x, y, epochs):
+print(x_vector)
+
+def mlpc_train_epochs(x_train, x_test, y_train, y_test, epochs):
     scores = []
     for iterations in epochs:
         # create ANN classifier
-        clf = MLPClassifier(solver='sgd', hidden_layer_sizes=(500,2), activation="logistic", max_iter=iterations)
-        # split dataset into training and testing data, 9:1 ratio, with a replicable split
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=30)
+        clf = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(500,2), activation="logistic", max_iter=iterations)
         clf.fit(x_train, y_train) # "train" or fit classifier into model
-        scores.append(clf.score(x_test, y_test))
+        scores.append(clf.score(x_test, y_test)) # save score
     return scores
 
-epochs = [50, 100, 150, 200, 250, 300]
-scores = train_epochs(x_vector, y_vector, epochs)
+def forest_train(x_train, x_test, y_train, y_test, min_samples):
+    scores = []
+    for min_sample in min_samples:
+        # create ANN classifier
+        clf = RandomForestClassifier(n_estimators=1000, min_samples_leaf=min_sample)
+        clf.fit(x_train, y_train) # "train" or fit classifier into model
+        scores.append(clf.score(x_test, y_test)) # save score
+    return scores
+
+# split dataset into training and testing data, 9:1 ratio, with a replicable split
+x_train, x_test, y_train, y_test = train_test_split(x_vector, y_vector, test_size=0.1, random_state=30)
+epochs = [5, 10, 15, 20, 25, 50, 100] # define epoch counts
+mlpc_scores = mlpc_train_epochs(x_train, x_test, y_train, y_test, epochs) # train
+
+min_samples = [5, 10]
+forest_scores = forest_train(x_train, x_test, y_train, y_test, min_samples)
 
 fig = plt.figure()
-fig1 = fig.add_subplot()
+fig1, fig2 = fig.subplots(2)
 fig1.set_xlabel("No. of Epochs")
 fig1.set_ylabel("Score")
 fig1.set_title("Mean accuracy of Epochs")
-plt.plot(epochs, scores)
+fig1.plot(epochs, mlpc_scores)
+
+fig2.set_xlabel("No. of samples")
+fig2.set_ylabel("Score")
+fig2.set_title("Mean accuracy of min leaf samples")
+fig2.plot(min_samples, forest_scores)
 plt.show()
-print(scores)
+
+## Section 3
+
+# Create KFold object with 10 splits/iterations
+k = 10
+kf = KFold(n_splits=k, random_state=30)
+
+# create score arrays
+mlpc_50_accuracy = []
+mlpc_500_accuracy = []
+mlpc_1000_accuracy = []
+forest_50_accuracy = []
+forest_500_accuracy = []
+forest_1000_accuracy = []
+
+for train_i, test_i in kf.split(data):
+    # split data according to this split's indexes
+    x_train = data.iloc[train_i, : ]
+    x_test = data.iloc[test_i, : ]
+    y_train = data.iloc[train_i, : ]
+    y_test = data.iloc[test_i, : ]
+
+    # create neural networks
+    mlpc_50 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(50,2), activation="logistic", max_iter=100)
+    mlpc_500 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(500,2), activation="logistic", max_iter=100)
+    mlpc_1000 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(1000,2), activation="logistic", max_iter=100)
+
+    # create random forests
+    forest_50 = RandomForestClassifier(n_estimators=50, min_samples_leaf=10)
+    forest_500 = RandomForestClassifier(n_estimators=500, min_samples_leaf=10)
+    forest_1000 = RandomForestClassifier(n_estimators=1000, min_samples_leaf=10)
+
+    # fit (train) classifiers with this split's training data
+    mlpc_50.fit(x_train, y_train)
+    mlpc_500.fit(x_train, y_train)
+    mlpc_1000.fit(x_train, y_train)
+    forest_50.fit(x_train, y_train)
+    forest_500.fit(x_train, y_train)
+    forest_1000.fit(x_train, y_train)
+
+    # test classifiers with this split's testing data
+    mlpc_50_pred = mlpc_50.predict(x_test)
+    mlpc_500_pred = mlpc_500.predict(x_test)
+    mlpc_1000_pred = mlpc_1000.predict(x_test)
+    forest_50_pred = forest_50.predict(x_test)
+    forest_500_pred = forest_500.predict(x_test)
+    forest_1000_pred = forest_1000.predict(x_test)
+
+    # append accuracy score classifier-specific arrays
+    mlpc_50_accuracy.append(accuracy_score(mlpc_50_pred, y_test))
+    mlpc_500_accuracy.append(accuracy_score(mlpc_500_pred, y_test))
+    mlpc_1000_accuracy.append(accuracy_score(mlpc_1000_pred, y_test))
+    forest_50_accuracy.append(accuracy_score(forest_50_pred, y_test))
+    forest_500_accuracy.append(accuracy_score(forest_500_pred, y_test))
+    forest_1000_accuracy.append(accuracy_score(forest_1000_pred, y_test))
+
