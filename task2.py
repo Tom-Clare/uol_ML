@@ -1,4 +1,3 @@
-from ctypes import sizeof
 from random import random
 import numpy
 import pandas
@@ -8,14 +7,14 @@ import matplotlib.pyplot as plt
 
 def compute_euclidean_distance(vec_1, vec_2):
 
-    distance = float('inf')
-    if (len(vec_1) == len(vec_2)):
-        sum = 0
-        for feature_index in range(0, len(vec_1) - 1):
-            squared = (vec_1[feature_index] - vec_2[feature_index]) ** 2
-            sum = sum + squared
+    distance = float('inf') # create placeholder value
+    if (len(vec_1) == len(vec_2)): # if possible to calculate distance
+        sum = 0 # initialise running total
+        for feature_index in range(0, len(vec_1) - 1): # loop through each feature for both vectors
+            squared = (vec_1[feature_index] - vec_2[feature_index]) ** 2 # get squared distance
+            sum = sum + squared # add to running total
         
-        distance = math.sqrt(squared)
+        distance = math.sqrt(squared) # get square root and return result
 
     return distance
 
@@ -34,11 +33,12 @@ def initialise_centroids(dataset, k):
 
 def kmeans(dataset, k):
 
-    dataset = dataset.values
+    dataset = dataset.values # remove columns for now
 
     changed = True  # tracks stability
     old_k = []
 
+    # used for evaluation
     cluster_assignment_history = []
     k_history = [k]
 
@@ -77,14 +77,14 @@ def eval_kmeans(dataset, cluster_assignment_history, k_history):
     iteration_values = []
     error_sum_values = []
     for iteration in range(len(cluster_assignment_history)):
-        error_sum = 0
-        for index in range(len(cluster_assignment_history[iteration])):
-            centroid_index = cluster_assignment_history[iteration][index]
-            row = dataset[index]
-            error = compute_euclidean_distance(row, k_history[iteration][centroid_index])
-            error_sum = error_sum + error
-        iteration_values.append(iteration + 1)
-        error_sum_values.append(error_sum)
+        error_sum = 0 # create running total
+        for index in range(len(cluster_assignment_history[iteration])): # for every iteration of kmeans
+            centroid_index = cluster_assignment_history[iteration][index] # get centroid assignment of record
+            row = dataset[index] # and get the record features
+            error = compute_euclidean_distance(row, k_history[iteration][centroid_index]) # calculate absolute difference
+            error_sum = error_sum + error # add to running total
+        iteration_values.append(iteration + 1) # arrays start at zero, but our iteration axis shouldn't, so add 1
+        error_sum_values.append(error_sum) # These two arrays will be plotted
 
     # Plot data
     k = len(k_history[0])
@@ -104,11 +104,11 @@ def show_plots(data, cluster_assignment, k):
     ## Plot height vs tail length
     colours = ["c", "m", "y"]
     for index in range(0, len(cluster_assignment)):
-        this_colour = colours[cluster_assignment[index]]
-        row = data.iloc[index]
-        fig1.scatter(row["height"], row["tail"], c=this_colour)
+        this_colour = colours[cluster_assignment[index]] # get cluster colour
+        row = data.iloc[index] # get row via index
+        fig1.scatter(row["height"], row["tail"], c=this_colour) # plot this data point
 
-    for cluster in k:
+    for cluster in k: # plot each centroid
         fig1.scatter(cluster[0], cluster[1], c="k", marker="X")
 
     fig1.set_xlabel("Height")
@@ -117,11 +117,11 @@ def show_plots(data, cluster_assignment, k):
 
     ## Plot Height vs leg length
     for index in range(0, len(cluster_assignment)):
-        this_colour = colours[cluster_assignment[index]]
-        row = data.iloc[index]
-        fig2.scatter(row["height"], row["leg"], c=this_colour)
+        this_colour = colours[cluster_assignment[index]] # get cluster colour
+        row = data.iloc[index] # get row via index
+        fig2.scatter(row["height"], row["leg"], c=this_colour) # plot this data point
 
-    for cluster in k:
+    for cluster in k: # plot each centroid
         fig2.scatter(cluster[0], cluster[2], c="k", marker="X")
 
     fig2.set_xlabel("Height")

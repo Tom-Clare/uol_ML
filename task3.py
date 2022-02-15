@@ -7,11 +7,14 @@ data = pandas.read_csv("Task3 - dataset - HIV RVG.csv", dtype=dtypes) # read dat
 # create column shorthand column names for easier handling
 data.columns = ["image", "bifurcation", "arteryvein", "alpha", "beta", "lambda", "lambda1", "lambda2", "status"]
 
+# get summary statistics
 data_summary = data.agg(["mean", "std", "min", "max"])
+print(data_summary)
 
+# show boxplots of raw data
 alpha_boxplot = data.boxplot(column="alpha", by="status")
 beta_boxplot = data.boxplot(column="beta", by="status")
-#plt.show()
+plt.show()
 
 def clean_normalise(data, column):
     std = 3 # remove row not within x standard deviations
@@ -29,11 +32,13 @@ data = clean_normalise(data, "lambda")
 data = clean_normalise(data, "lambda1")
 data = clean_normalise(data, "lambda2")
 
+# show boxplots after outlier removal and standardisation
 alpha_boxplot = data.boxplot(column="alpha", by="status")
 beta_boxplot = data.boxplot(column="beta", by="status")
-#plt.show()
+plt.show()
 
 data_summary = data.agg(["mean", "std", "min", "max"])
+print(data_summary)
 
 ## Section 2
 
@@ -70,7 +75,7 @@ def mlpc_train_epochs(x_train, x_test, y_train, y_test, epochs):
 def forest_train(x_train, x_test, y_train, y_test, min_samples):
     scores = []
     for min_sample in min_samples:
-        # create ANN classifier
+        # create random forest classifier
         clf = RandomForestClassifier(n_estimators=1000, min_samples_leaf=min_sample)
         clf.fit(x_train, y_train) # "train" or fit classifier into model
         scores.append(clf.score(x_test, y_test)) # save score
@@ -155,13 +160,6 @@ for train_i, test_i in kf.split(data):
     forest_50_accuracy.append(accuracy_score(forest_50_pred, y_test))
     forest_500_accuracy.append(accuracy_score(forest_500_pred, y_test))
     forest_1000_accuracy.append(accuracy_score(forest_1000_pred, y_test))
-
-# mlpc_50_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-# mlpc_500_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-# mlpc_1000_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-# forest_50_accuracy = [0.4554140127388535, 0.4745222929936306, 0.410828025477707, 0.4299363057324841, 0.48881789137380194, 0.4057507987220447, 0.5207667731629393, 0.44089456869009586, 0.48562300319488816, 0.3514376996805112]
-# forest_500_accuracy = [0.4968152866242038, 0.4745222929936306, 0.42356687898089174, 0.3885350318471338, 0.5175718849840255, 0.4057507987220447, 0.5335463258785943, 0.46006389776357826, 0.46006389776357826, 0.34824281150159747]
-# forest_1000_accuracy = [0.47770700636942676, 0.4713375796178344, 0.4140127388535032, 0.4012738853503185, 0.4984025559105431, 0.38977635782747605, 0.5271565495207667, 0.4440894568690096, 0.48242811501597443, 0.34185303514376997]
 
 average_scores = []
 average_scores.append(sum(mlpc_50_accuracy) / len(mlpc_50_accuracy))
