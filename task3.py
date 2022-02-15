@@ -111,57 +111,57 @@ forest_50_accuracy = []
 forest_500_accuracy = []
 forest_1000_accuracy = []
 
-# for train_i, test_i in kf.split(data):
-#     # split data according to this split's indexes
-#     x_train = x_vector[train_i]
-#     x_test = x_vector[test_i]
-#     y_train = y_vector[train_i]
-#     y_test = y_vector[test_i]
+for train_i, test_i in kf.split(data):
+    # split data according to this split's indexes
+    x_train = x_vector[train_i]
+    x_test = x_vector[test_i]
+    y_train = y_vector[train_i]
+    y_test = y_vector[test_i]
 
     
-#     with numpy.printoptions(threshold=numpy.inf):
-#         print(y_test)
+    with numpy.printoptions(threshold=numpy.inf):
+        print(y_test)
 
-#     # create neural networks
-#     mlpc_50 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(50,2), activation="logistic", max_iter=100)
-#     mlpc_500 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(500,2), activation="logistic", max_iter=100)
-#     mlpc_1000 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(1000,2), activation="logistic", max_iter=100)
+    # create neural networks
+    mlpc_50 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(50,2), activation="logistic", max_iter=100)
+    mlpc_500 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(500,2), activation="logistic", max_iter=100)
+    mlpc_1000 = MLPClassifier(solver='lbfgs', hidden_layer_sizes=(1000,2), activation="logistic", max_iter=100)
 
-#     # create random forests
-#     forest_50 = RandomForestClassifier(n_estimators=50, min_samples_leaf=10)
-#     forest_500 = RandomForestClassifier(n_estimators=500, min_samples_leaf=10)
-#     forest_1000 = RandomForestClassifier(n_estimators=1000, min_samples_leaf=10)
+    # create random forests
+    forest_50 = RandomForestClassifier(n_estimators=50, min_samples_leaf=10)
+    forest_500 = RandomForestClassifier(n_estimators=500, min_samples_leaf=10)
+    forest_1000 = RandomForestClassifier(n_estimators=1000, min_samples_leaf=10)
 
-#     # fit (train) classifiers with this split's training data
-#     mlpc_50.fit(x_train, y_train)
-#     mlpc_500.fit(x_train, y_train)
-#     mlpc_1000.fit(x_train, y_train)
-#     forest_50.fit(x_train, y_train)
-#     forest_500.fit(x_train, y_train)
-#     forest_1000.fit(x_train, y_train)
+    # fit (train) classifiers with this split's training data
+    mlpc_50.fit(x_train, y_train)
+    mlpc_500.fit(x_train, y_train)
+    mlpc_1000.fit(x_train, y_train)
+    forest_50.fit(x_train, y_train)
+    forest_500.fit(x_train, y_train)
+    forest_1000.fit(x_train, y_train)
 
-#     # test classifiers with this split's testing data
-#     mlpc_50_pred = mlpc_50.predict(x_test)
-#     mlpc_500_pred = mlpc_500.predict(x_test)
-#     mlpc_1000_pred = mlpc_1000.predict(x_test)
-#     forest_50_pred = forest_50.predict(x_test)
-#     forest_500_pred = forest_500.predict(x_test)
-#     forest_1000_pred = forest_1000.predict(x_test)
+    # test classifiers with this split's testing data
+    mlpc_50_pred = mlpc_50.predict(x_test)
+    mlpc_500_pred = mlpc_500.predict(x_test)
+    mlpc_1000_pred = mlpc_1000.predict(x_test)
+    forest_50_pred = forest_50.predict(x_test)
+    forest_500_pred = forest_500.predict(x_test)
+    forest_1000_pred = forest_1000.predict(x_test)
 
-#     # append accuracy score classifier-specific arrays
-#     mlpc_50_accuracy.append(accuracy_score(mlpc_50_pred, y_test))
-#     mlpc_500_accuracy.append(accuracy_score(mlpc_500_pred, y_test))
-#     mlpc_1000_accuracy.append(accuracy_score(mlpc_1000_pred, y_test))
-#     forest_50_accuracy.append(accuracy_score(forest_50_pred, y_test))
-#     forest_500_accuracy.append(accuracy_score(forest_500_pred, y_test))
-#     forest_1000_accuracy.append(accuracy_score(forest_1000_pred, y_test))
+    # append accuracy score classifier-specific arrays
+    mlpc_50_accuracy.append(accuracy_score(mlpc_50_pred, y_test))
+    mlpc_500_accuracy.append(accuracy_score(mlpc_500_pred, y_test))
+    mlpc_1000_accuracy.append(accuracy_score(mlpc_1000_pred, y_test))
+    forest_50_accuracy.append(accuracy_score(forest_50_pred, y_test))
+    forest_500_accuracy.append(accuracy_score(forest_500_pred, y_test))
+    forest_1000_accuracy.append(accuracy_score(forest_1000_pred, y_test))
 
-mlpc_50_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-mlpc_500_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-mlpc_1000_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
-forest_50_accuracy = [0.4554140127388535, 0.4745222929936306, 0.410828025477707, 0.4299363057324841, 0.48881789137380194, 0.4057507987220447, 0.5207667731629393, 0.44089456869009586, 0.48562300319488816, 0.3514376996805112]
-forest_500_accuracy = [0.4968152866242038, 0.4745222929936306, 0.42356687898089174, 0.3885350318471338, 0.5175718849840255, 0.4057507987220447, 0.5335463258785943, 0.46006389776357826, 0.46006389776357826, 0.34824281150159747]
-forest_1000_accuracy = [0.47770700636942676, 0.4713375796178344, 0.4140127388535032, 0.4012738853503185, 0.4984025559105431, 0.38977635782747605, 0.5271565495207667, 0.4440894568690096, 0.48242811501597443, 0.34185303514376997]
+# mlpc_50_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
+# mlpc_500_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
+# mlpc_1000_accuracy = [0.16560509554140126, 0.09872611464968153, 0.35987261146496813, 0.07006369426751592, 0.38338658146964855, 0.28434504792332266, 0.4185303514376997, 0.5814696485623003, 0.38338658146964855, 0.12460063897763578]
+# forest_50_accuracy = [0.4554140127388535, 0.4745222929936306, 0.410828025477707, 0.4299363057324841, 0.48881789137380194, 0.4057507987220447, 0.5207667731629393, 0.44089456869009586, 0.48562300319488816, 0.3514376996805112]
+# forest_500_accuracy = [0.4968152866242038, 0.4745222929936306, 0.42356687898089174, 0.3885350318471338, 0.5175718849840255, 0.4057507987220447, 0.5335463258785943, 0.46006389776357826, 0.46006389776357826, 0.34824281150159747]
+# forest_1000_accuracy = [0.47770700636942676, 0.4713375796178344, 0.4140127388535032, 0.4012738853503185, 0.4984025559105431, 0.38977635782747605, 0.5271565495207667, 0.4440894568690096, 0.48242811501597443, 0.34185303514376997]
 
 average_scores = []
 average_scores.append(sum(mlpc_50_accuracy) / len(mlpc_50_accuracy))
